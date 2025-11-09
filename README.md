@@ -1,11 +1,11 @@
 # GAIA – Goal-oriented Autonomous Intelligence for Adaptive GUI Testing
 
-GAIA는 “기획서만 주어지면 브라우저 테스트 플랜부터 실행·보고까지 자동으로 만들어 준다”는 목표로 설계된 1학기 MVP다. GPT 기반 플래너가 UI 테스트 시나리오와 체크리스트를 만들고, 적응형 스케줄러와 GPT-5 오케스트레이터가 Playwright MCP를 통해 실제 사이트를 탐색한다.
+GAIA는 “기획서만 주어지면 브라우저 테스트 플랜부터 실행·보고까지 자동으로 만들어 준다”는 목표로 설계된 MVP다. GPT 기반 플래너가 UI 테스트 시나리오와 체크리스트를 만들고, 적응형 스케줄러와 GPT-5 오케스트레이터가 Playwright MCP를 통해 실제 사이트를 탐색한다.
 
 ## 왜 GAIA인가?
 - **Spec → Test까지 One-click**: PDF 기획서를 투입하면 100+ 시나리오와 25개 체크리스트가 자동 생성된다.
 - **Adaptive Execution**: 우선순위·DOM 변화·실패 히스토리를 반영하는 스케줄러가 가장 가치 있는 시나리오부터 반복 실행한다.
-- **Investor-ready UX**: PySide6 GUI가 실시간 로그, 스크린샷, 커서 오버레이, 부분 성공률을 보여줘 비개발자도 데모를 진행할 수 있다.
+- **Investor-ready UX**: PySide6 GUI가 진행률, 스크린샷, 커서 오버레이, 부분 성공률을 보여줘 비개발자도 데모를 진행할 수 있다.
 
 ## 시스템 아키텍처
 ```
@@ -17,17 +17,17 @@ Scenario  └──────────────┘  │   └───�
                              │          │
                              │    Prioritized plan
                              ▼          │
-                        ┌───────────────┴──────────────┐
-                        │ Phase 4 Execution Layer       │
-                        │ ┌───────────────────────────┐ │
+                        ┌───────────────┴────────────────┐
+                        │ Phase 4 Execution Layer        │
+                        │ ┌────────────────────────────┐ │
                         │ │ Master Orchestrator (GPT-5)│ │
-                        │ ├───────────────────────────┤ │
+                        │ ├────────────────────────────┤ │
                         │ │ Intelligent Orchestrator   │ │
                         │ │  (GPT-5-mini Vision +      │ │
                         │ │   selector/embedding cache)│ │
-                        │ └───────────────────────────┘ │
-                        │            │                  │
-                        └────────────┼─────────────────┘
+                        │ └────────────────────────────┘ │
+                        │            │                   │
+                        └────────────┼───────────────────┘
                                      │ MCP Actions
                          ┌───────────▼──────────┐
                          │ Playwright MCP Host  │
@@ -47,11 +47,11 @@ Scenario  └──────────────┘  │   └───�
 3. **Phase 4 – Autonomous Execution**
    - `master_orchestrator.py`(GPT-5)가 사이트 맵을 만들고 시나리오를 페이지별로 배분한다.
    - `intelligent_orchestrator.py`(GPT-5-mini Vision)가 DOM 스냅샷+스크린샷을 분석해 액션을 결정, 셀렉터/임베딩 캐시를 재사용한다.
-   - Smart Navigation, Aggressive Text Matching, Semantic Embedding Matching이 결합되어 페이지 이동과 요소 탐색이 자동화된다.
+   - Smart Navigation이 결합되어 페이지 이동과 요소 탐색이 자동화된다.
 4. **Playwright MCP Host**
    - `phase4/mcp_host.py`(FastAPI + Chromium)가 `analyze_page`, `execute_step`를 제공하며 150개 DOM 요소 목록과 스크린샷을 스트리밍한다.
 5. **Tracking & Reporting**
-   - `tracker.ChecklistTracker`가 커버리지를 업데이트하고, GUI(`gaia/src/gui`)가 실시간 로그·스크린샷·Cursor overlay·4단계 결과(성공/부분/실패/스킵)를 시각화한다.
+   - `tracker.ChecklistTracker`가 커버리지를 업데이트하고, GUI(`gaia/src/gui`)가 실시간 진행률·스크린샷·Cursor overlay·4단계 결과(성공/부분/실패/스킵)를 시각화한다.
 
 ## 컴포넌트 상세
 
@@ -81,7 +81,7 @@ Scenario  └──────────────┘  │   └───�
 ### Tracking, GUI & Reporting
 - **Checklist Tracker**: 시나리오에서 참조된 체크리스트 항목을 실시간으로 마킹.
 - **PySide6 GUI**:
-  - 실시간 로그 하이라이팅, 스크린샷/DOM 업데이트, SVG 커서 오버레이.
+  - 실시간 진행률, 스크린샷, 테스트 시나리오, SVG 커서 오버레이.
   - Smart Navigation 이벤트, Scroll, Vision fallback 등 주요 이벤트를 즉시 렌더 (`QCoreApplication.processEvents()`로 UI 렉 방지).
 - **Phase5 Report (WIP)**: 실행 결과를 요약해 회귀 테스트 보고서로 활용 예정.
 
@@ -177,4 +177,4 @@ python run_local_test.py            # 로컬 UI 테스트 사이트용 데모
 - `artifacts/plans/*.json`: QA 데모/회귀 테스트용 고정 플랜.
 
 ---
-GAIA는 “학생/초기 팀도 버튼 몇 번이면 회귀 테스트를 돌릴 수 있는” QA 파이프라인을 목표로 계속 진화하고 있다. 새로운 기능을 추가할 때는 `docs/PROGRESS.md`를 업데이트하고, 캐시 구조 변경 시 `artifacts/cache` 포맷을 함께 기록해 주세요.
+GAIA는 “학생/초기 팀도 버튼 몇 번이면 회귀 테스트를 돌릴 수 있는” QA 파이프라인을 목표로 계속 진화하고 있다. 새로운 기능을 추가할 때는 `docs/PROGRESS.md`를 업데이트하고, 캐시 구조 변경 시 `artifacts/cache` 포맷을 함께 기록해야한다.
